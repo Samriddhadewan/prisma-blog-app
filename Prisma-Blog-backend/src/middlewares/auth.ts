@@ -1,5 +1,5 @@
 import { auth as betterAuth } from "../lib/auth";
-import { NextFunction, Express, Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 
 export enum UserRole {
   USER = "USER",
@@ -37,7 +37,7 @@ export const auth = (...roles: UserRole[]) => {
       if (!session.user.emailVerified) {
         return res.status(401).json({
           success: false,
-          message: "Email Verification required! Please verify the email!xqw",
+          message: "Email Verification required! Please verify the email!",
         });
       }
 
@@ -56,7 +56,6 @@ export const auth = (...roles: UserRole[]) => {
             "Forbidden! You dont have permission to access this resources.",
         });
       }
-
       next();
     } catch (error) {
       next(error);
