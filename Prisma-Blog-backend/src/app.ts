@@ -15,7 +15,7 @@ app.use(
   }),
 );
 
-app.use("/post", postRouter);
+app.use("/posts", postRouter);
 
 app.get("/", (req, res) => {
   res.send("Hello, world");

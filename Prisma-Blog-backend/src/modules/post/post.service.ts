@@ -1,3 +1,4 @@
+import { date } from "better-auth/*";
 import { Post, PostStatus } from "../../../generated/prisma/client";
 import { PostWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
@@ -16,78 +17,120 @@ const createPost = async (
 };
 
 const getAllPost = async ({
-  search,
-  tags,
-  isFeatured,
-  status,
-  authorId
+    search,
+    tags,
+    isFeatured,
+    status,
+    authorId,
+    skip,
+    page,
+    limit,
+    sortBy,
+    sortOrder
 }: {
-  search: string | undefined;
-  tags: string[];
-  isFeatured: boolean | undefined;
-  status: PostStatus | null;
-  authorId: string | undefined
+    search: string | undefined,
+    tags: string[] | [],
+    isFeatured: boolean | undefined,
+    status: PostStatus | undefined,
+    authorId: string | undefined,
+    page: number,
+    limit: number,
+    skip: number,
+    sortBy: string,
+    sortOrder: string
 }) => {
-  const andConditions: PostWhereInput[] = [];
-  if (search) {
-    andConditions.push({
-      OR: [
-        {
-          title: {
-            contains: search as string,
-            mode: "insensitive",
-          },
+    const andConditions: PostWhereInput[] = []
+
+    if (search) {
+        andConditions.push({
+            OR: [
+                {
+                    title: {
+                        contains: search,
+                        mode: "insensitive"
+                    }
+                },
+                {
+                    content: {
+                        contains: search,
+                        mode: "insensitive"
+                    }
+                },
+                {
+                    tags: {
+                        has: search
+                    }
+                }
+            ]
+        })
+    }
+
+    if (tags.length > 0) {
+        andConditions.push({
+            tags: {
+                hasEvery: tags as string[]
+            }
+        })
+    }
+
+    if (typeof isFeatured === 'boolean') {
+        andConditions.push({
+            isFeatured
+        })
+    }
+
+    if (status) {
+        andConditions.push({
+            status
+        })
+    }
+
+    if (authorId) {
+        andConditions.push({
+            authorId
+        })
+    }
+
+    const allPost = await prisma.post.findMany({
+        take: limit,
+        skip,
+        where: {
+            AND: andConditions
         },
-        {
-          content: {
-            contains: search as string,
-            mode: "insensitive",
-          },
-        },
-        {
-          tags: {
-            has: search as string,
-          },
-        },
-      ],
+        orderBy: {
+            [sortBy]: sortOrder
+        }
     });
-  }
 
-  if (tags.length > 0) {
-    andConditions.push({
-      tags: {
-        hasEvery: tags as string[],
-      },
-    });
-  }
-
-  if (isFeatured) {
-    andConditions.push({
-      isFeatured: isFeatured,
-    });
-  }
-
-  if (status) {
-    andConditions.push({
-      status: status,
-    });
-  }
-
-  if(authorId){
-    andConditions.push({
-      authorId: authorId
+    const total = await prisma.post.count({
+        where: {
+            AND: andConditions
+        }
     })
-  }
+    return {
+        data: allPost,
+        pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+}
 
-  const allPost = await prisma.post.findMany({
+
+const getPostById = async(postId : string)=> {
+  const result = await prisma.post.findUnique({
     where: {
-      AND: andConditions,
-    },
-  });
-  return allPost;
-};
+      id: postId
+    }
+  })
+  return result
+}
+
 
 export const postService = {
   createPost,
   getAllPost,
+  getPostById
 };
