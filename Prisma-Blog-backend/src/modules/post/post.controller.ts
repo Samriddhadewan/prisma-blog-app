@@ -4,37 +4,49 @@ import { PostStatus } from "../../../generated/prisma/enums";
 import paginationSortingHelper from "../../helpers/paginationAndSortingHelper";
 
 const getAllPost = async (req: Request, res: Response) => {
-    try {
-        const { search } = req.query
-        const searchString = typeof search === 'string' ? search : undefined
+  try {
+    const { search } = req.query;
+    const searchString = typeof search === "string" ? search : undefined;
 
-        const tags = req.query.tags ? (req.query.tags as string).split(",") : [];
+    const tags = req.query.tags ? (req.query.tags as string).split(",") : [];
 
+    // true or false
+    const isFeatured = req.query.isFeatured
+      ? req.query.isFeatured === "true"
+        ? true
+        : req.query.isFeatured === "false"
+          ? false
+          : undefined
+      : undefined;
 
-        // true or false
-        const isFeatured = req.query.isFeatured
-            ? req.query.isFeatured === 'true'
-                ? true
-                : req.query.isFeatured === 'false'
-                    ? false
-                    : undefined
-            : undefined
+    const status = req.query.status as PostStatus | undefined;
 
-        const status = req.query.status as PostStatus | undefined
+    const authorId = req.query.authorId as string | undefined;
 
-        const authorId = req.query.authorId as string | undefined
+    const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(
+      req.query,
+    );
 
-        const { page, limit, skip, sortBy, sortOrder } = paginationSortingHelper(req.query)
-
-        const result = await postService.getAllPost({ search: searchString, tags, isFeatured, status, authorId, page, limit, skip, sortBy, sortOrder })
-        res.status(200).json(result)
-    } catch (e) {
-        res.status(400).json({
-            error: "Post creation failed",
-            details: e
-        })
-    }
-}
+    const result = await postService.getAllPost({
+      search: searchString,
+      tags,
+      isFeatured,
+      status,
+      authorId,
+      page,
+      limit,
+      skip,
+      sortBy,
+      sortOrder,
+    });
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({
+      error: "Post creation failed",
+      details: e,
+    });
+  }
+};
 
 const createPost = async (req: Request, res: Response) => {
   try {
@@ -55,11 +67,11 @@ const createPost = async (req: Request, res: Response) => {
   }
 };
 
-const getPostById = async(req: Request, res: Response) => {
+const getPostById = async (req: Request, res: Response) => {
   try {
-    const {postId} = req.params;
-    if(!postId){
-      throw new Error("PostId is required")
+    const { postId } = req.params;
+    if (!postId) {
+      throw new Error("PostId is required");
     }
     const result = await postService.getPostById(postId);
     res.status(200).json(result);
@@ -69,10 +81,30 @@ const getPostById = async(req: Request, res: Response) => {
       details: error,
     });
   }
-}
+};
+
+const getMyPosts = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    console.log(user)
+    if (!user) {
+      throw new Error("You are unauthorized!");
+    }
+
+    const result = await postService.getMyPosts(user?.id as string);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({
+      error: "Post fetched failed",
+      details: error,
+    });
+  }
+};
 
 export const postController = {
+  getMyPosts,
   createPost,
   getAllPost,
-  getPostById
+  getPostById,
 };
