@@ -1,4 +1,3 @@
-import { promise } from "better-auth/*";
 import {
   CommentStatus,
   Post,
@@ -6,6 +5,7 @@ import {
 } from "../../../generated/prisma/client";
 import { PostWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
+import { UserRole } from "../../middlewares/auth";
 
 const createPost = async (
   data: Omit<Post, "id" | "createdAt" | "updatedAt" | "authorId">,
@@ -279,22 +279,47 @@ const deletePost = async (
 const getStats = async () => {
   //post count , published posts, draft posts, total comments, total views
   return await prisma.$transaction(async (tx) => {
-    const [totalPost, totalPublishedPosts, totalDraftPosts, totalArchivePosts, totalComments, totalApprovedComments] =
-      await Promise.all([
-        await tx.post.count(),
-        await tx.post.count({ where: { status: PostStatus.PUBLISHED } }),
-        await tx.post.count({ where: { status: PostStatus.DRAFT } }),
-        await tx.post.count({ where: { status: PostStatus.ARCHIVED } }),
-        await tx.comment.count(),
-        await tx.comment.count({where : {status : CommentStatus.APPROVED}})
-      ]);
+    const [
+      totalPost,
+      totalPublishedPosts,
+      totalDraftPosts,
+      totalArchivePosts,
+      totalComments,
+      totalApprovedComments,
+      totalRejectedComment,
+      totalUsers,
+      adminCount,
+      normalUsers,
+      totalViews,
+    ] = await Promise.all([
+      await tx.post.count(),
+      await tx.post.count({ where: { status: PostStatus.PUBLISHED } }),
+      await tx.post.count({ where: { status: PostStatus.DRAFT } }),
+      await tx.post.count({ where: { status: PostStatus.ARCHIVED } }),
+      await tx.comment.count(),
+      await tx.comment.count({ where: { status: CommentStatus.APPROVED } }),
+      await tx.comment.count({ where: { status: CommentStatus.REJECTED } }),
+      await tx.user.count(),
+      await tx.user.count({ where: { role: UserRole.ADMIN } }),
+      await tx.user.count({ where: { role: UserRole.USER } }),
+      await tx.post.aggregate({
+        _sum: {
+          views: true,
+        },
+      }),
+    ]);
     return {
       totalPost,
       totalPublishedPosts,
       totalArchivePosts,
       totalDraftPosts,
       totalComments,
-      totalApprovedComments
+      totalApprovedComments,
+      totalRejectedComment,
+      totalUsers,
+      adminCount,
+      normalUsers,
+      totalViews: totalViews._sum.views,
     };
   });
 };
