@@ -5,6 +5,8 @@ import { userInfo } from "node:os";
 const router = express.Router();
 
 router.get("/", postController.getAllPost);
+router.get("/stats",auth(UserRole.ADMIN), postController.getStats);
+
 router.post(
   "/",
   auth(UserRole.USER, UserRole.ADMIN),

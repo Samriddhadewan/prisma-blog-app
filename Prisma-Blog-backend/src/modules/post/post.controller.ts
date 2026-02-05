@@ -57,7 +57,6 @@ const createPost = async (req: Request, res: Response) => {
         error: "Unauthorized",
       });
     }
-    console.log(req.user);
     const result = await postService.createPost(req.body, user.id as string);
     res.status(201).json(result);
   } catch (error) {
@@ -87,7 +86,6 @@ const getPostById = async (req: Request, res: Response) => {
 const getMyPosts = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    console.log(user);
     if (!user) {
       throw new Error("You are unauthorized!");
     }
@@ -95,7 +93,6 @@ const getMyPosts = async (req: Request, res: Response) => {
     const result = await postService.getMyPosts(user?.id as string);
     res.status(200).json(result);
   } catch (error) {
-    console.log(error);
     res.status(400).json({
       error: "Post fetched failed",
       details: error,
@@ -106,19 +103,17 @@ const getMyPosts = async (req: Request, res: Response) => {
 const updatePost = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    console.log(user);
     if (!user) {
       throw new Error("You are unauthorized!");
     }
     const { postId } = req.params;
     const isAdmin = user.role === UserRole.ADMIN;
-    console.log(user)
 
     const result = await postService.updatePost(
       postId as string,
       req.body,
       user?.id as string,
-      isAdmin
+      isAdmin,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -131,22 +126,19 @@ const updatePost = async (req: Request, res: Response) => {
   }
 };
 
-
 const deletePost = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    console.log(user);
     if (!user) {
       throw new Error("You are unauthorized!");
     }
     const { postId } = req.params;
     const isAdmin = user.role === UserRole.ADMIN;
-    console.log(user)
 
     const result = await postService.deletePost(
       postId as string,
       user?.id as string,
-      isAdmin
+      isAdmin,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -158,8 +150,19 @@ const deletePost = async (req: Request, res: Response) => {
     });
   }
 };
-
-
+const getStats = async (req: Request, res: Response) => {
+  try {
+    const result = await postService.getStats();
+    res.status(200).json(result);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "get stats fetch failed";
+    res.status(400).json({
+      error: errorMessage,
+      details: error,
+    });
+  }
+};
 
 export const postController = {
   getMyPosts,
@@ -167,5 +170,6 @@ export const postController = {
   getAllPost,
   getPostById,
   updatePost,
-  deletePost
+  deletePost,
+  getStats,
 };

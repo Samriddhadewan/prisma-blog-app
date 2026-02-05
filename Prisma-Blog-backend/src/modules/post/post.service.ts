@@ -1,3 +1,4 @@
+import { promise } from "better-auth/*";
 import {
   CommentStatus,
   Post,
@@ -270,11 +271,32 @@ const deletePost = async (
 
   return await prisma.post.delete({
     where: {
-      id : postId
-    }
-  })
+      id: postId,
+    },
+  });
+};
 
-
+const getStats = async () => {
+  //post count , published posts, draft posts, total comments, total views
+  return await prisma.$transaction(async (tx) => {
+    const [totalPost, totalPublishedPosts, totalDraftPosts, totalArchivePosts, totalComments, totalApprovedComments] =
+      await Promise.all([
+        await tx.post.count(),
+        await tx.post.count({ where: { status: PostStatus.PUBLISHED } }),
+        await tx.post.count({ where: { status: PostStatus.DRAFT } }),
+        await tx.post.count({ where: { status: PostStatus.ARCHIVED } }),
+        await tx.comment.count(),
+        await tx.comment.count({where : {status : CommentStatus.APPROVED}})
+      ]);
+    return {
+      totalPost,
+      totalPublishedPosts,
+      totalArchivePosts,
+      totalDraftPosts,
+      totalComments,
+      totalApprovedComments
+    };
+  });
 };
 
 export const postService = {
@@ -283,5 +305,6 @@ export const postService = {
   getPostById,
   getMyPosts,
   updatePost,
-  deletePost
+  deletePost,
+  getStats,
 };
