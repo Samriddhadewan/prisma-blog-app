@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { postService } from "./post.service";
 import { PostStatus } from "../../../generated/prisma/enums";
 import paginationSortingHelper from "../../helpers/paginationAndSortingHelper";
+import { UserRole } from "../../middlewares/auth";
 
 const getAllPost = async (req: Request, res: Response) => {
   try {
@@ -110,11 +111,14 @@ const updatePost = async (req: Request, res: Response) => {
       throw new Error("You are unauthorized!");
     }
     const { postId } = req.params;
+    const isAdmin = user.role === UserRole.ADMIN;
+    console.log(user)
 
     const result = await postService.updatePost(
       postId as string,
       req.body,
       user?.id as string,
+      isAdmin
     );
     res.status(200).json(result);
   } catch (error) {
@@ -127,10 +131,41 @@ const updatePost = async (req: Request, res: Response) => {
   }
 };
 
+
+const deletePost = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    console.log(user);
+    if (!user) {
+      throw new Error("You are unauthorized!");
+    }
+    const { postId } = req.params;
+    const isAdmin = user.role === UserRole.ADMIN;
+    console.log(user)
+
+    const result = await postService.deletePost(
+      postId as string,
+      user?.id as string,
+      isAdmin
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "post delete failed";
+    res.status(400).json({
+      error: errorMessage,
+      details: error,
+    });
+  }
+};
+
+
+
 export const postController = {
   getMyPosts,
   createPost,
   getAllPost,
   getPostById,
-  updatePost
+  updatePost,
+  deletePost
 };
