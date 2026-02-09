@@ -1,8 +1,11 @@
-import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
-export default function Home() {
-  return (
+export default async function Home() {
+  const session = await authClient.getSession();
+
+  console.log(session)
+  return (  
     <div>
       <Button variant={"outline"}>Click here</Button>
     </div>
