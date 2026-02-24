@@ -1,2 +1,2 @@
 export type {Route} from "./routes.types"
-export type * from "./blogCard.types"
+export type {BlogPost} from "./blog.types"
